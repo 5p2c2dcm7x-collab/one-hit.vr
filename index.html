@@ -1,0 +1,1032 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONE HIT VR 0.4 — Full Experiment</title>
+
+<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #050812;
+  font-family: Arial, sans-serif;
+}
+
+#hud {
+  position: fixed;
+  z-index: 10;
+  top: 12px;
+  left: 12px;
+  width: min(340px, calc(100vw - 24px));
+  padding: 15px;
+  color: white;
+  background: rgba(5, 12, 25, .88);
+  border: 1px solid #20baff;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #0088ff33;
+}
+
+#hud h2 {
+  margin: 0 0 8px;
+  color: #35c9ff;
+  letter-spacing: 2px;
+  font-size: 19px;
+}
+
+#status {
+  font-size: 13px;
+  color: #b7d9ed;
+  margin: 8px 0 12px;
+  line-height: 1.4;
+}
+
+button {
+  border: 1px solid #22baff;
+  background: #102b46;
+  color: white;
+  border-radius: 7px;
+  padding: 10px 12px;
+  margin: 3px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:active { background: #17638e; }
+
+button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+#help {
+  color: #9eb8cb;
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 9px;
+}
+
+#notice {
+  position: fixed;
+  z-index: 11;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.75);
+  color: white;
+  border: 1px solid #267cae;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 12px;
+  text-align: center;
+  max-width: 90vw;
+}
+
+a-scene {
+  position: fixed;
+  inset: 0;
+}
+</style>
+</head>
+
+<body>
+
+<div id="hud">
+  <h2>ONE HIT VR <small>0.4</small></h2>
+  <div id="status">Система готова. Начни эксперимент.</div>
+
+  <button id="startBtn">START EXPERIMENT</button>
+  <button id="grabBtn">GRAB / RELEASE</button>
+  <button id="actionBtn">ENERGY PULSE</button>
+  <button id="replayBtn" disabled>WATCH REPLAY</button>
+  <button id="slowBtn" disabled>SLOW MOTION</button>
+  <button id="resetBtn">RESET</button>
+
+  <div id="help">
+    ПК: WASD — движение, мышь — обзор, E — взять предмет,
+    SPACE — игровое воздействие.<br>
+    VR: Grip — взять предмет, Trigger — активировать его рядом с целью.
+    Наводись лучом на кнопки в сцене и нажимай Trigger.
+  </div>
+</div>
+
+<div id="notice">
+  Для VR открой страницу в Meta Quest Browser и нажми VR-кнопку
+</div>
+
+<a-scene
+  id="scene"
+  vr-mode-ui="enabled: true"
+  renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true"
+  background="color: #050914"
+  shadow="type: pcfsoft"
+  embedded
+  loading-screen="enabled: true"
+>
+
+  <a-assets>
+    <a-mixin id="metal"
+      material="color: #253c50; metalness: .8; roughness: .3">
+    </a-mixin>
+  </a-assets>
+
+  <!-- ОСВЕЩЕНИЕ -->
+
+  <a-entity light="type: ambient; intensity: 0.55; color: #8bbcff">
+  </a-entity>
+
+  <a-entity position="0 4 -2"
+    light="type: point; intensity: 2.2; distance: 12; color: #16aaff">
+  </a-entity>
+
+  <a-entity position="-4 3 -3"
+    light="type: point; intensity: 1.2; distance: 10; color: #873cff">
+  </a-entity>
+
+  <a-entity position="4 3 -3"
+    light="type: point; intensity: 1.5; distance: 10; color: #00ffd5">
+  </a-entity>
+
+  <!-- ЛАБОРАТОРИЯ -->
+
+  <a-plane rotation="-90 0 0"
+    width="14" height="14"
+    material="color: #101b2b; roughness: .65"
+    position="0 0 -2"
+    shadow="receive: true">
+  </a-plane>
+
+  <a-plane rotation="0 0 0"
+    position="0 3 -5"
+    width="14" height="6"
+    material="color: #101727">
+  </a-plane>
+
+  <a-box position="0 3.1 -4.94"
+    width="13" height=".035" depth=".05"
+    material="color: #00aaff; emissive: #0077ff; emissiveIntensity: 2">
+  </a-box>
+
+  <a-box position="0 .05 -2"
+    width="4.2" height=".1" depth="3"
+    material="color: #17283b; metalness: .8">
+  </a-box>
+
+  <!-- ДЕКОР ЛАБОРАТОРИИ -->
+
+  <a-entity id="labDecor">
+
+    <a-box position="-5 1.5 -3.5"
+      width=".12" height="3" depth="1.5"
+      material="color: #203c53; metalness: .8">
+    </a-box>
+
+    <a-box position="5 1.5 -3.5"
+      width=".12" height="3" depth="1.5"
+      material="color: #203c53; metalness: .8">
+    </a-box>
+
+    <a-box position="-3.5 1.1 -4.5"
+      width="1.1" height="2.2" depth=".4"
+      material="color: #142a3e; metalness: .7">
+    </a-box>
+
+    <a-box position="3.5 1.1 -4.5"
+      width="1.1" height="2.2" depth=".4"
+      material="color: #142a3e; metalness: .7">
+    </a-box>
+
+    <a-text value="RESEARCH FACILITY  /  SECTOR 01"
+      position="-2.3 2.8 -4.85"
+      width="5"
+      color="#45cfff"
+      align="center">
+    </a-text>
+
+    <a-cylinder position="-3.5 .12 -1.8"
+      radius=".16" height=".24"
+      material="color: #20baff; emissive: #0077ff">
+    </a-cylinder>
+
+    <a-cylinder position="3.5 .12 -1.8"
+      radius=".16" height=".24"
+      material="color: #20baff; emissive: #0077ff">
+    </a-cylinder>
+
+  </a-entity>
+
+  <!-- СИНТЕТИЧЕСКИЙ ГУМАНОИД -->
+
+  <a-entity id="subject" position="0 0 -2">
+
+    <!-- Тень / платформа -->
+
+    <a-cylinder position="0 .08 0"
+      radius=".75" height=".12"
+      material="color: #263d50; metalness: .8">
+    </a-cylinder>
+
+    <!-- Ноги -->
+
+    <a-entity id="leftLeg" position="-.2 .85 0">
+      <a-cylinder radius=".105" height=".85"
+        material="color: #8295a6; metalness: .55; roughness: .35">
+      </a-cylinder>
+      <a-sphere position="0 -.43 .08"
+        radius=".14"
+        material="color: #334b61; metalness: .7">
+      </a-sphere>
+    </a-entity>
+
+    <a-entity id="rightLeg" position=".2 .85 0">
+      <a-cylinder radius=".105" height=".85"
+        material="color: #8295a6; metalness: .55; roughness: .35">
+      </a-cylinder>
+      <a-sphere position="0 -.43 .08"
+        radius=".14"
+        material="color: #334b61; metalness: .7">
+      </a-sphere>
+    </a-entity>
+
+    <!-- Корпус -->
+
+    <a-entity id="torso" position="0 1.55 0">
+
+      <a-box width=".65" height=".85" depth=".32"
+        material="color: #8497a9; metalness: .65; roughness: .3"
+        radius=".06">
+      </a-box>
+
+      <a-box position="0 .05 .17"
+        width=".32" height=".28" depth=".025"
+        material="color: #122c43; emissive: #007bff; emissiveIntensity: 1.5">
+      </a-box>
+
+      <a-sphere position="0 .02 .2"
+        radius=".045"
+        material="color: #ff344f; emissive: #ff003c; emissiveIntensity: 2">
+      </a-sphere>
+
+      <!-- Плечи -->
+
+      <a-sphere position="-.4 .28 0" radius=".16"
+        material="color: #a0b0bf; metalness: .65">
+      </a-sphere>
+
+      <a-sphere position=".4 .28 0" radius=".16"
+        material="color: #a0b0bf; metalness: .65">
+      </a-sphere>
+
+    </a-entity>
+
+    <!-- Шея -->
+
+    <a-cylinder position="0 2.05 0"
+      radius=".095" height=".2"
+      material="color: #243d52; metalness: .9">
+    </a-cylinder>
+
+    <!-- Голова -->
+
+    <a-entity id="head" position="0 2.35 0">
+
+      <a-sphere radius=".27"
+        material="color: #b0bdc8; metalness: .35; roughness: .4">
+      </a-sphere>
+
+      <a-box position="0 -.12 .08"
+        width=".22" height=".09" depth=".22"
+        material="color: #647a8b; metalness: .6">
+      </a-box>
+
+      <a-sphere position="-.105 .025 .225"
+        radius=".035"
+        material="color: #00eaff; emissive: #00dfff; emissiveIntensity: 3">
+      </a-sphere>
+
+      <a-sphere position=".105 .025 .225"
+        radius=".035"
+        material="color: #00eaff; emissive: #00dfff; emissiveIntensity: 3">
+      </a-sphere>
+
+      <a-box position="0 -.06 .245"
+        width=".1" height=".018" depth=".015"
+        material="color: #263c50">
+      </a-box>
+
+    </a-entity>
+
+    <!-- Руки -->
+
+    <a-entity id="leftArm" position="-.48 1.77 0">
+      <a-cylinder radius=".095" height=".65"
+        material="color: #94a7b8; metalness: .65">
+      </a-cylinder>
+      <a-sphere position="0 -.34 0"
+        radius=".11"
+        material="color: #263e54; metalness: .7">
+      </a-sphere>
+    </a-entity>
+
+    <a-entity id="rightArm" position=".48 1.77 0">
+      <a-cylinder radius=".095" height=".65"
+        material="color: #94a7b8; metalness: .65">
+      </a-cylinder>
+      <a-sphere position="0 -.34 0"
+        radius=".11"
+        material="color: #263e54; metalness: .7">
+      </a-sphere>
+    </a-entity>
+
+    <!-- Энергетические линии -->
+
+    <a-box position="-.33 1.55 .18"
+      width=".035" height=".48" depth=".025"
+      material="color: #00cfff; emissive: #00bfff; emissiveIntensity: 2">
+    </a-box>
+
+    <a-box position=".33 1.55 .18"
+      width=".035" height=".48" depth=".025"
+      material="color: #00cfff; emissive: #00bfff; emissiveIntensity: 2">
+    </a-box>
+
+  </a-entity>
+
+  <!-- ЭФФЕКТ ЭНЕРГЕТИЧЕСКОГО ИМПУЛЬСА -->
+
+  <a-entity id="impactRing"
+    position="0 1.5 -1.82"
+    rotation="90 0 0"
+    visible="false">
+
+    <a-torus radius=".3" radius-tubular=".025"
+      material="color: #ff254d; emissive: #ff0033; emissiveIntensity: 3; transparent: true; opacity: .9">
+    </a-torus>
+
+  </a-entity>
+
+  <!-- ЭНЕРГЕТИЧЕСКИЙ ИНСТРУМЕНТ -->
+
+  <a-entity id="tool"
+    class="interactable"
+    position=".65 1.1 -1.2">
+
+    <a-cylinder radius=".065" height=".55"
+      rotation="0 0 90"
+      material="color: #243c55; metalness: .8">
+    </a-cylinder>
+
+    <a-sphere position=".28 0 0"
+      radius=".12"
+      material="color: #00cfff; emissive: #00aaff; emissiveIntensity: 3">
+    </a-sphere>
+
+    <a-sphere position="-.28 0 0"
+      radius=".12"
+      material="color: #ff315d; emissive: #ff003c; emissiveIntensity: 2">
+    </a-sphere>
+
+    <a-torus radius=".11" radius-tubular=".018"
+      position=".28 0 0"
+      material="color: #00eaff; emissive: #00cfff; emissiveIntensity: 3">
+    </a-torus>
+
+  </a-entity>
+
+  <!-- ПАНЕЛЬ В СЦЕНЕ -->
+
+  <a-entity id="worldPanel" position="0 1.65 -1.1">
+
+    <a-plane width="1.65" height=".95"
+      material="color: #071b30; opacity: .95; transparent: true; side: double"
+      position="0 0 -.02">
+    </a-plane>
+
+    <a-text id="worldTitle"
+      value="EXPERIMENT READY"
+      position="0 .32 0"
+      align="center"
+      color="#40d5ff"
+      width="2.7">
+    </a-text>
+
+    <a-text id="worldMessage"
+      value="Take the energy tool"
+      position="0 .12 0"
+      align="center"
+      color="#ffffff"
+      width="2.3">
+    </a-text>
+
+    <a-entity id="worldStart" class="uiButton"
+      position="0 -.2 .025">
+
+      <a-plane width=".85" height=".23"
+        material="color: #0876a8; emissive: #005b8c; side: double">
+      </a-plane>
+
+      <a-text value="START"
+        align="center"
+        position="0 0 .015"
+        width="1.6"
+        color="#ffffff">
+      </a-text>
+
+    </a-entity>
+
+    <a-entity id="worldReplay" class="uiButton"
+      position="0 -.2 .025"
+      visible="false">
+
+      <a-plane width=".85" height=".23"
+        material="color: #0876a8; emissive: #005b8c; side: double">
+      </a-plane>
+
+      <a-text value="REPLAY"
+        align="center"
+        position="0 0 .015"
+        width="1.6"
+        color="#ffffff">
+      </a-text>
+
+    </a-entity>
+
+    <a-entity id="worldReset" class="uiButton"
+      position="0 -.47 .025"
+      visible="false">
+
+      <a-plane width=".85" height=".2"
+        material="color: #263c55; side: double">
+      </a-plane>
+
+      <a-text value="NEW TEST"
+        align="center"
+        position="0 0 .015"
+        width="1.6"
+        color="#ffffff">
+      </a-text>
+
+    </a-entity>
+
+  </a-entity>
+
+  <!-- КАМЕРА И УПРАВЛЕНИЕ -->
+
+  <a-entity id="rig" position="0 0 0">
+
+    <a-entity id="camera"
+      camera="active: true"
+      position="0 1.6 0"
+      look-controls="pointerLockEnabled: false"
+      wasd-controls="enabled: false">
+
+      <a-cursor
+        fuse="false"
+        raycaster="objects: .interactable, .uiButton; far: 5"
+        material="color: #35dfff; shader: flat">
+      </a-cursor>
+
+    </a-entity>
+
+    <a-entity id="leftController"
+      laser-controls="hand: left"
+      raycaster="objects: .interactable, .uiButton; far: 5"
+      line="color: #28cfff; opacity: .8">
+    </a-entity>
+
+    <a-entity id="rightController"
+      laser-controls="hand: right"
+      raycaster="objects: .interactable, .uiButton; far: 5"
+      line="color: #28cfff; opacity: .8">
+    </a-entity>
+
+  </a-entity>
+
+</a-scene>
+
+<script>
+(() => {
+  "use strict";
+
+  const scene = document.querySelector("#scene");
+  const subject = document.querySelector("#subject");
+  const tool = document.querySelector("#tool");
+  const rig = document.querySelector("#rig");
+  const camera = document.querySelector("#camera");
+  const ring = document.querySelector("#impactRing");
+
+  const statusEl = document.querySelector("#status");
+  const startBtn = document.querySelector("#startBtn");
+  const grabBtn = document.querySelector("#grabBtn");
+  const actionBtn = document.querySelector("#actionBtn");
+  const replayBtn = document.querySelector("#replayBtn");
+  const slowBtn = document.querySelector("#slowBtn");
+  const resetBtn = document.querySelector("#resetBtn");
+
+  const worldPanel = document.querySelector("#worldPanel");
+  const worldTitle = document.querySelector("#worldTitle");
+  const worldMessage = document.querySelector("#worldMessage");
+  const worldStart = document.querySelector("#worldStart");
+  const worldReplay = document.querySelector("#worldReplay");
+  const worldReset = document.querySelector("#worldReset");
+
+  const leftController = document.querySelector("#leftController");
+  const rightController = document.querySelector("#rightController");
+
+  let phase = "ready";
+  let heldBy = null;
+  let experimentStarted = false;
+  let replayData = [];
+  let recording = false;
+  let replaying = false;
+  let slowMotion = false;
+  let replayFrame = 0;
+  let lastRecord = 0;
+  let actionTime = 0;
+  let pulseAnimation = null;
+
+  const originalToolPosition = new THREE.Vector3(.65, 1.1, -1.2);
+  const originalToolRotation = new THREE.Euler(0, 0, 0);
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function setWorld(title, message) {
+    worldTitle.setAttribute("value", title);
+    worldMessage.setAttribute("value", message);
+  }
+
+  function setWorldButtons(mode) {
+    worldStart.setAttribute("visible", mode === "start");
+    worldReplay.setAttribute("visible", mode === "replay");
+    worldReset.setAttribute("visible", mode === "replay");
+  }
+
+  function worldPosition(entity) {
+    const p = new THREE.Vector3();
+    entity.object3D.getWorldPosition(p);
+    return p;
+  }
+
+  function getIntersection(controller) {
+    const ray = controller.components.raycaster;
+    if (!ray) return null;
+
+    const intersections = ray.intersectedEls;
+    return intersections && intersections.length
+      ? intersections[0]
+      : null;
+  }
+
+  function setHeld(controller) {
+    if (phase !== "active") return;
+
+    if (heldBy) {
+      releaseTool();
+      return;
+    }
+
+    const hit = getIntersection(controller);
+
+    if (hit !== tool) {
+      setStatus("Наведи луч на энергетический инструмент и нажми Grip.");
+      return;
+    }
+
+    heldBy = controller;
+    controller.object3D.attach(tool.object3D);
+
+    tool.object3D.position.set(0, -.08, -.45);
+    tool.object3D.rotation.set(0, 0, 0);
+
+    setStatus("Инструмент взят. Поднеси его к цели и нажми Trigger.");
+  }
+
+  function releaseTool() {
+    if (!heldBy) return;
+
+    scene.object3D.attach(tool.object3D);
+    tool.object3D.position.copy(originalToolPosition);
+    tool.object3D.rotation.copy(originalToolRotation);
+
+    heldBy = null;
+    setStatus("Инструмент отпущен.");
+  }
+
+  function startExperiment() {
+    if (phase !== "ready") return;
+
+    phase = "active";
+    experimentStarted = true;
+    replayData = [];
+    recording = true;
+    lastRecord = 0;
+
+    setWorld("EXPERIMENT ACTIVE", "Use the energy tool");
+    setWorldButtons("none");
+
+    startBtn.disabled = true;
+    replayBtn.disabled = true;
+    slowBtn.disabled = true;
+
+    setStatus("Эксперимент начался. Возьми инструмент и активируй импульс рядом с гуманоидом.");
+  }
+
+  function spawnParticles() {
+    const colors = ["#ff244f", "#ff8c35", "#00cfff", "#ffffff"];
+
+    for (let i = 0; i < 22; i++) {
+      const particle = document.createElement("a-sphere");
+
+      particle.setAttribute("radius", ".025");
+      particle.setAttribute("material",
+        "color: " + colors[i % colors.length] +
+        "; emissive: " + colors[i % colors.length] +
+        "; emissiveIntensity: 2");
+
+      const p = new THREE.Vector3(
+        (Math.random() - .5) * .55,
+        1.5 + (Math.random() - .5) * .55,
+        -2 + (Math.random() - .5) * .35
+      );
+
+      particle.object3D.position.copy(p);
+      scene.appendChild(particle);
+
+      const velocity = new THREE.Vector3(
+        (Math.random() - .5) * 2.5,
+        Math.random() * 2.2,
+        (Math.random() - .5) * 2
+      );
+
+      const start = performance.now();
+      const duration = 700 + Math.random() * 450;
+
+      function animateParticle(now) {
+        const t = (now - start) / duration;
+
+        if (t >= 1) {
+          particle.remove();
+          return;
+        }
+
+        particle.object3D.position.copy(p).addScaledVector(velocity, t);
+        particle.object3D.scale.setScalar(1 - t);
+        requestAnimationFrame(animateParticle);
+      }
+
+      requestAnimationFrame(animateParticle);
+    }
+  }
+
+  function pulse() {
+    if (phase !== "active" || !heldBy) {
+      setStatus("Сначала начни эксперимент и возьми энергетический инструмент.");
+      return;
+    }
+
+    const handPosition = worldPosition(heldBy);
+    const targetPosition = worldPosition(subject);
+
+    if (handPosition.distanceTo(targetPosition) > 2.2) {
+      setStatus("Поднеси инструмент ближе к синтетическому гуманоиду.");
+      return;
+    }
+
+    phase = "impact";
+    actionTime = performance.now();
+
+    setStatus("ИМПУЛЬС ЗАРЕГИСТРИРОВАН — идёт обработка результата...");
+
+    ring.setAttribute("visible", true);
+    ring.object3D.scale.setScalar(.1);
+
+    spawnParticles();
+
+    const startRotation = subject.object3D.rotation.clone();
+    const startPosition = subject.object3D.position.clone();
+
+    const duration = 1100;
+
+    function animateImpact(now) {
+      const t = Math.min(1, (now - actionTime) / duration);
+      const smooth = 1 - Math.pow(1 - t, 3);
+
+      subject.object3D.rotation.x = startRotation.x + smooth * -.17;
+      subject.object3D.rotation.z = startRotation.z + Math.sin(t * Math.PI) * .08;
+
+      subject.object3D.position.y =
+        startPosition.y + Math.sin(t * Math.PI) * .08;
+
+      ring.object3D.scale.setScalar(.1 + smooth * 2.5);
+
+      const material = ring.querySelector("a-torus").getAttribute("material");
+      ring.querySelector("a-torus").setAttribute("material",
+        "opacity: " + (1 - t * .85) +
+        "; color: #ff254d; emissive: #ff0033; emissiveIntensity: 3; transparent: true");
+
+      if (t < 1) {
+        requestAnimationFrame(animateImpact);
+      } else {
+        finishExperiment();
+      }
+    }
+
+    requestAnimationFrame(animateImpact);
+  }
+
+  function recordFrame(now) {
+    if (!recording || replaying) return;
+
+    if (now - lastRecord < 50) {
+      requestAnimationFrame(recordFrame);
+      return;
+    }
+
+    lastRecord = now;
+
+    const p = subject.object3D.position;
+    const r = subject.object3D.rotation;
+
+    replayData.push({
+      time: now,
+      x: p.x,
+      y: p.y,
+      z: p.z,
+      rx: r.x,
+      ry: r.y,
+      rz: r.z,
+      ring: ring.object3D.scale.x,
+      ringVisible: ring.getAttribute("visible")
+    });
+
+    requestAnimationFrame(recordFrame);
+  }
+
+  function finishExperiment() {
+    recording = false;
+    phase = "complete";
+
+    releaseTool();
+
+    setWorld("EXPERIMENT COMPLETE", "Watch the recorded event?");
+    setWorldButtons("replay");
+
+    setStatus("Эксперимент завершён. Запись сохранена. Теперь можно посмотреть Replay.");
+
+    replayBtn.disabled = replayData.length < 2;
+    slowBtn.disabled = replayData.length < 2;
+    startBtn.disabled = true;
+
+    ring.setAttribute("visible", true);
+  }
+
+  function resetExperiment() {
+    recording = false;
+    replaying = false;
+    heldBy = null;
+    phase = "ready";
+    experimentStarted = false;
+    slowMotion = false;
+
+    subject.object3D.position.set(0, 0, -2);
+    subject.object3D.rotation.set(0, 0, 0);
+
+    ring.setAttribute("visible", false);
+    ring.object3D.scale.setScalar(.1);
+
+    tool.object3D.position.copy(originalToolPosition);
+    tool.object3D.rotation.copy(originalToolRotation);
+
+    replayData = [];
+
+    setWorld("EXPERIMENT READY", "Start a new experiment");
+    setWorldButtons("start");
+
+    startBtn.disabled = false;
+    replayBtn.disabled = true;
+    slowBtn.disabled = true;
+
+    setStatus("Система сброшена. Можно начать новый эксперимент.");
+  }
+
+  function playReplay() {
+    if (replayData.length < 2 || replaying) return;
+
+    phase = "replay";
+    replaying = true;
+    recording = false;
+    replayFrame = 0;
+
+    setWorld("REPLAY MODE", "Recorded experiment");
+    setWorldButtons("none");
+
+    setStatus("Воспроизведение записи...");
+
+    const frameDuration = slowMotion ? 100 : 50;
+
+    function frame() {
+      if (!replaying) return;
+
+      const index = Math.min(
+        Math.floor(replayFrame),
+        replayData.length - 1
+      );
+
+      const nextIndex = Math.min(index + 1, replayData.length - 1);
+      const a = replayData[index];
+      const b = replayData[nextIndex];
+      const alpha = replayFrame - index;
+
+      subject.object3D.position.set(
+        a.x + (b.x - a.x) * alpha,
+        a.y + (b.y - a.y) * alpha,
+        a.z + (b.z - a.z) * alpha
+      );
+
+      subject.object3D.rotation.set(
+        a.rx + (b.rx - a.rx) * alpha,
+        a.ry + (b.ry - a.ry) * alpha,
+        a.rz + (b.rz - a.rz) * alpha
+      );
+
+      ring.object3D.scale.setScalar(
+        a.ring + (b.ring - a.ring) * alpha
+      );
+
+      ring.setAttribute("visible", a.ringVisible);
+
+      replayFrame += slowMotion ? .25 : .65;
+
+      if (replayFrame < replayData.length - 1) {
+        setTimeout(frame, frameDuration);
+      } else {
+        replaying = false;
+        phase = "complete";
+
+        setWorld("REPLAY COMPLETE", "Watch again or start a new test");
+        setWorldButtons("replay");
+
+        setStatus("Запись завершена. Можно повторить просмотр или начать новый эксперимент.");
+      }
+    }
+
+    frame();
+  }
+
+  function toggleSlow() {
+    slowMotion = !slowMotion;
+    slowBtn.textContent = slowMotion ? "NORMAL SPEED" : "SLOW MOTION";
+
+    setStatus(slowMotion
+      ? "Замедленный просмотр включён."
+      : "Обычная скорость просмотра.");
+  }
+
+  // КНОПКИ НА ЭКРАНЕ
+
+  startBtn.addEventListener("click", startExperiment);
+  grabBtn.addEventListener("click", () => {
+    if (heldBy) releaseTool();
+    else setStatus("В VR наведи контроллер на инструмент и нажми Grip. На ПК используй E.");
+  });
+
+  actionBtn.addEventListener("click", pulse);
+  replayBtn.addEventListener("click", playReplay);
+  slowBtn.addEventListener("click", toggleSlow);
+  resetBtn.addEventListener("click", resetExperiment);
+
+  // КНОПКИ В 3D-СЦЕНЕ
+
+  worldStart.addEventListener("click", startExperiment);
+  worldReplay.addEventListener("click", playReplay);
+  worldReset.addEventListener("click", resetExperiment);
+
+  // VR-КОНТРОЛЛЕРЫ
+
+  [leftController, rightController].forEach(controller => {
+    controller.addEventListener("gripdown", () => {
+      setHeld(controller);
+    });
+
+    controller.addEventListener("triggerdown", () => {
+      const hit = getIntersection(controller);
+
+      if (hit && hit.classList.contains("uiButton")) {
+        hit.emit("click");
+        return;
+      }
+
+      if (heldBy === controller) {
+        pulse();
+      }
+    });
+  });
+
+  // ПК: E — взять предмет, SPACE — активировать
+
+  window.addEventListener("keydown", event => {
+    if (event.repeat) return;
+
+    if (event.code === "KeyE") {
+      if (heldBy) {
+        releaseTool();
+      } else if (phase === "active") {
+        heldBy = camera;
+        camera.object3D.attach(tool.object3D);
+        tool.object3D.position.set(.35, -.25, -.65);
+        tool.object3D.rotation.set(0, 0, 0);
+
+        setStatus("Инструмент взят. Поднеси его к цели и нажми SPACE.");
+      }
+    }
+
+    if (event.code === "Space") {
+      event.preventDefault();
+      pulse();
+    }
+
+    if (event.code === "KeyR" && phase === "complete") {
+      playReplay();
+    }
+  });
+
+  // ЗАПИСЬ
+
+  scene.addEventListener("loaded", () => {
+    setStatus("Сцена загружена. Нажми START EXPERIMENT.");
+    setWorldButtons("start");
+  });
+
+  // ДВИЖЕНИЕ НА ПК
+
+  const keys = {};
+
+  window.addEventListener("keydown", e => keys[e.code] = true);
+  window.addEventListener("keyup", e => keys[e.code] = false);
+
+  let previousTime = performance.now();
+
+  function movementLoop(now) {
+    const dt = Math.min((now - previousTime) / 1000, .05);
+    previousTime = now;
+
+    if (!scene.is("vr-mode") && phase !== "replay") {
+      const speed = 2.0 * dt;
+
+      const yaw = camera.object3D.rotation.y;
+
+      const forward = new THREE.Vector3(
+        -Math.sin(yaw), 0, -Math.cos(yaw)
+      );
+
+      const right = new THREE.Vector3(
+        Math.cos(yaw), 0, -Math.sin(yaw)
+      );
+
+      if (keys.KeyW) rig.object3D.position.addScaledVector(forward, speed);
+      if (keys.KeyS) rig.object3D.position.addScaledVector(forward, -speed);
+      if (keys.KeyA) rig.object3D.position.addScaledVector(right, -speed);
+      if (keys.KeyD) rig.object3D.position.addScaledVector(right, speed);
+    }
+
+    requestAnimationFrame(movementLoop);
+  }
+
+  requestAnimationFrame(movementLoop);
+
+  // СЛЕДИМ ЗА СОСТОЯНИЕМ
+
+  function update() {
+    if (recording) {
+      requestAnimationFrame(recordFrame);
+      recording = false;
+    }
+    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
+
+  // ЗАЩИТА ОТ СЛУЧАЙНОГО ПЕРЕХОДА В VR
+
+  scene.addEventListener("enter-vr", () => {
+    document.querySelector("#notice").textContent =
+      "VR ACTIVE — ONE HIT VR";
+  });
+
+  scene.addEventListener("exit-vr", () => {
+    document.querySelector("#notice").textContent =
+      "VR завершён. Можно продолжить на экране.";
+  });
+
+})();
+</script>
+
+</body>
+</html>
